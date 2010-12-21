@@ -20,17 +20,21 @@ __author__ = "Paul Mucur <http://mucur.name/>"
 #   Use Etags and Last-Modified to make requests more efficient - but the API
 #       does not yet support it
 
-_debug = 0
+_debug = 1
 
 # The user agent string sent to del.icio.us when making requests. If you are
 # using this module in your own application, you should probably change this.
-USER_AGENT = "Python-Delicious/%s +http://morgancraft.com/service_layer/python-delicious/" % __version__
+USER_AGENT = "Python-Pinboard/%s +http://morgancraft.com/service_layer/python-pinboard/" % __version__
 
 import urllib
 import urllib2
 import sys
 import re
 import time
+## added to handle gzip compression from server
+import StringIO
+import gzip
+
 from xml.dom import minidom
 try:
     StringTypes = basestring
@@ -60,8 +64,11 @@ except:
     datetime = None
     
 
-# The URL of the del.icio.us API as it will be changing shortly.
-DELICIOUS_API = "https://api.del.icio.us/v1"
+# The URL of the Pinboard API
+DELICIOUS_API = "https://api.pinboard.in/v1"
+#DELICIOUS_API = "https://api.del.icio.us/v1"
+AUTH_HANDLER_REALM = 'API'
+AUTH_HANDLER_URI = "https://api.pinboard.in/"
 
 def open(username, password):
     """Open a connection to a del.icio.us account"""
@@ -124,19 +131,20 @@ class DeliciousAccount(UserDict):
     
     def __init__(self, username, password):
         UserDict.__init__(self)
-        
-        # Authenticate the URL opener so that it can access del.icio.us
+        # Authenticate the URL opener so that it can access Pinboard
         if _debug:
-            sys.stderr.write("Initialising DeliciousAccount object.\n")
+            sys.stderr.write("Initialising Pinboard Account object.\n")
         auth_handler = urllib2.HTTPBasicAuthHandler()
-        auth_handler.add_password("del.icio.us API", "https://api.del.icio.us/", \
+        auth_handler.add_password("API", "https://api.pinboard.in/", \
                 username, password)
         opener = urllib2.build_opener(auth_handler)
-        opener.addheaders = [("User-agent", USER_AGENT)]
+        opener.addheaders = [("User-agent", USER_AGENT), ('Accept-encoding', 'gzip')]
         urllib2.install_opener(opener)
         if _debug:
             sys.stderr.write("URL opener with HTTP authenticiation installed globally.\n")
+        
         self["lastupdate"] = self.lastupdate()
+        
         self["lastupdate_parsed"] = time.strptime(self["lastupdate"], \
                 "%Y-%m-%dT%H:%M:%SZ")
         if _debug:
@@ -178,17 +186,38 @@ class DeliciousAccount(UserDict):
         self.__lastrequest = time.time()
         if _debug:
             sys.stderr.write("Opening %s.\n" % url)
+        
+        
+        print url
+        try:
+            raw_xml = urllib2.urlopen(url)
+            compresseddata = raw_xml.read()
+            compressedstream = StringIO.StringIO(compresseddata)
+            gzipper = gzip.GzipFile(fileobj=compressedstream)
+            xml = gzipper.read()
+            
+        except urllib2.URLError, e:
+                import pdb
+                pdb.set_trace()
+                print xml
+        
+        '''
         xml = urllib2.urlopen(url)
+        
+        import pdb
+        pdb.set_trace()
+        print xml
+        '''
         self["headers"] = {}
-        for header in xml.headers.headers:
+        for header in raw_xml.headers.headers:
             (name, value) = header.split(": ")
             self["headers"][name.lower()] = value[:-2]
-        if xml.headers.status == "503":
+        if raw_xml.headers.status == "503":
             raise ThrottleError(url, \
                     "503 HTTP status code returned by del.icio.us")
         if _debug:
             sys.stderr.write("%s opened successfully.\n" % url)
-        return minidom.parseString(xml.read())
+        return minidom.parseString(xml)
     
     
     # Methods to fetch del.icio.us content
