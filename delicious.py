@@ -1,9 +1,16 @@
 #!/usr/bin/env python
-"""Python-Delicious
+"""Python-Pinboard
 
-Python module for access to del.icio.us <http://del.icio.us/> via its API.
+Python module for access to pinboard <http://pinboard.in/> via its API.
+Recommended: Python 2.6 or later (untested on previous versions)
 
-Recommended: Python 2.3 or later (untested on previous versions)
+This library was built on top of Paul Mucur's original work on the python-delicious
+which was supported for python 2.3.  Morgan became a contributor and ported this library
+to pinboard.in when it was announced in December 2010 that delicious servers may be 
+shutting down.
+
+The port to pinboard resulted in the inclusion of gzip support
+
 """
 
 __version__ = "pre-1.0"
@@ -13,18 +20,17 @@ __copyright__ = "Copyright 2005-2008, Paul Mucur"
 __author__ = "Paul Mucur <http://mucur.name/>"
 
 #TODO:
-#   Should text be properly escaped for XML? Or that not this module's 
+#   Should text be properly escaped for XML? Or that not this module's
 #       responsibility?
 #   Create test suite
-#   Gzip support - but the API does not yet support it
-#   Use Etags and Last-Modified to make requests more efficient - but the API
-#       does not yet support it
 
-_debug = 1
 
-# The user agent string sent to del.icio.us when making requests. If you are
+_debug = 0
+
+# The user agent string sent to pinboard.in when making requests. If you are
 # using this module in your own application, you should probably change this.
 USER_AGENT = "Python-Pinboard/%s +http://morgancraft.com/service_layer/python-pinboard/" % __version__
+
 
 import urllib
 import urllib2
@@ -51,7 +57,7 @@ try:
     TupleType = tuple
 except:
     from types import ListType, TupleType
-    
+
 # Taken from Mark Pilgrim's amazing Universal Feed Parser
 # <http://feedparser.org/>
 try:
@@ -62,20 +68,19 @@ try:
     import datetime
 except:
     datetime = None
-    
+
 
 # The URL of the Pinboard API
-DELICIOUS_API = "https://api.pinboard.in/v1"
-#DELICIOUS_API = "https://api.del.icio.us/v1"
+PINBOARD_API = "https://api.pinboard.in/v1"
 AUTH_HANDLER_REALM = 'API'
 AUTH_HANDLER_URI = "https://api.pinboard.in/"
 
 def open(username, password):
-    """Open a connection to a del.icio.us account"""
+    """Open a connection to a pinboard.in account"""
     return DeliciousAccount(username, password)
 
 def connect(username, password):
-    """Open a connection to a del.icio.us account"""
+    """Open a connection to a pinboard.in account"""
     return open(username, password)
 
 
@@ -84,9 +89,9 @@ def connect(username, password):
 class DeliciousError(Exception):
     """Error in the Python-Delicious module"""
     pass
-    
+
 class ThrottleError(DeliciousError):
-    """Error caused by del.icio.us throttling requests"""
+    """Error caused by pinboard.in throttling requests"""
     def __init__(self, url, message):
         self.url = url
         self.message = message
@@ -94,41 +99,41 @@ class ThrottleError(DeliciousError):
         return "%s: %s" % (self.url, self.message)
 
 class AddError(DeliciousError):
-    """Error adding a post to del.icio.us"""
+    """Error adding a post to pinboard.in"""
     pass
 
 class DeleteError(DeliciousError):
-    """Error deleting a post from del.icio.us"""
+    """Error deleting a post from pinboard.in"""
     pass
 
 class BundleError(DeliciousError):
-    """Error bundling tags on del.icio.us"""
+    """Error bundling tags on pinboard.in"""
     pass
-    
+
 class DeleteBundleError(DeliciousError):
-    """Error deleting a bundle from del.icio.us"""
+    """Error deleting a bundle from pinboard.in"""
     pass
 
 class RenameTagError(DeliciousError):
-    """Error renaming a tag in del.icio.us"""
+    """Error renaming a tag in pinboard.in"""
     pass
 
 class DateParamsError(DeliciousError):
     '''Date params error'''
     pass
-    
+
 class DeliciousAccount(UserDict):
-    """A del.icio.us account"""
-    
+    """A pinboard.in account"""
+
     # Used to track whether all posts have been downloaded yet.
     __allposts = 0
     __postschanged = 0
-    
+
     # Time of last request so that the one second limit can be enforced.
     __lastrequest = None
-    
+
     # Special methods
-    
+
     def __init__(self, username, password):
         UserDict.__init__(self)
         # Authenticate the URL opener so that it can access Pinboard
@@ -149,7 +154,7 @@ class DeliciousAccount(UserDict):
                 "%Y-%m-%dT%H:%M:%SZ")
         if _debug:
             sys.stderr.write("Time of last update loaded into class dictionary.\n")
-    
+
     def __getitem__(self, key):
         try:
             return UserDict.__getitem__(self, key)
@@ -162,18 +167,17 @@ class DeliciousAccount(UserDict):
                 return self.posts()
             elif key == "bundles":
                 return self.bundles()
-    
+
     def __setitem__(self, key, value):
         if key == "posts":
             if _debug:
                 sys.stderr.write("The value of posts has been changed.\n")
             self.__postschanged = 1
         return UserDict.__setitem__(self, key, value)
-        
-        
-        
+
+
     def __request(self, url):
-        
+
         # Make sure that it has been at least 1 second since the last
         # request was made. If not, halt execution for approximately one
         # seconds.
@@ -187,68 +191,56 @@ class DeliciousAccount(UserDict):
         if _debug:
             sys.stderr.write("Opening %s.\n" % url)
         
-        
-        print url
         try:
+            ## for pinboard a gzip request is made
             raw_xml = urllib2.urlopen(url)
             compresseddata = raw_xml.read()
+            ## bing unpackaging gzipped stream buffer
             compressedstream = StringIO.StringIO(compresseddata)
             gzipper = gzip.GzipFile(fileobj=compressedstream)
             xml = gzipper.read()
             
         except urllib2.URLError, e:
-                import pdb
-                pdb.set_trace()
-                print xml
+                raise e
         
-        '''
-        xml = urllib2.urlopen(url)
-        
-        import pdb
-        pdb.set_trace()
-        print xml
-        '''
         self["headers"] = {}
         for header in raw_xml.headers.headers:
             (name, value) = header.split(": ")
             self["headers"][name.lower()] = value[:-2]
         if raw_xml.headers.status == "503":
             raise ThrottleError(url, \
-                    "503 HTTP status code returned by del.icio.us")
+                    "503 HTTP status code returned by pinboard.in")
         if _debug:
             sys.stderr.write("%s opened successfully.\n" % url)
         return minidom.parseString(xml)
-    
-    
-    # Methods to fetch del.icio.us content
+        
     
     def lastupdate(self):
-        """Return the last time that the del.icio.us account was updated."""
+        """Return the last time that the pinboard.in account was updated."""
         return self.__request("%s/posts/update" % \
-                DELICIOUS_API).firstChild.getAttribute("time")
-    
+                PINBOARD_API).firstChild.getAttribute("time")
+
     def posts(self, tag="", date="", todt="", fromdt="", count=0):
-        """Return del.icio.us bookmarks as a list of dictionaries.
-        
-        This should be used without arguments as rarely as possible by 
-        combining it with the lastupdate attribute to only get all posts when 
-        there is new content as it places a large load on the del.icio.us 
+        """Return pinboard.in bookmarks as a list of dictionaries.
+
+        This should be used without arguments as rarely as possible by
+        combining it with the lastupdate attribute to only get all posts when
+        there is new content as it places a large load on the pinboard.in
         servers.
-        
+
         """
         query = {}
-        
+
         ## if a date is passed then a ranged set of date params CANNOT be passed
         if date and (todt or fromdt):
             raise DateParamsError
-            
-            
+
         if not count and not date and not todt and not fromdt and not tag:
             path = "all"
-            
-            # If attempting to load all of the posts from del.icio.us, and
-            # a previous download has been done, check to see if there has 
-            # been an update; if not, then just return the posts stored 
+
+            # If attempting to load all of the posts from pinboard.in, and
+            # a previous download has been done, check to see if there has
+            # been an update; if not, then just return the posts stored
             # inside the class.
             if _debug:
                 sys.stderr.write("Checking to see if a previous download has been made.\n")
@@ -271,7 +263,7 @@ class DeliciousAccount(UserDict):
             query["count"] = count
         if tag:
             query["tag"] = tag
-            
+
         ##todt
         if todt and (isinstance(todt, ListType) or isinstance(todt, TupleType)):
             query["todt"] = "-".join([str(x) for x in todt[:3]])
@@ -280,7 +272,7 @@ class DeliciousAccount(UserDict):
             query["todt"] = "-".join([str(todt.year), str(todt.month), str(todt.day)])
         elif todt:
             query["todt"] = todt
-        
+
         ## fromdt
         if fromdt and (isinstance(fromdt, ListType) or isinstance(fromdt, TupleType)):
             query["fromdt"] = "-".join([str(x) for x in fromdt[:3]])
@@ -289,8 +281,7 @@ class DeliciousAccount(UserDict):
             query["fromdt"] = "-".join([str(fromdt.year), str(fromdt.month), str(fromdt.day)])
         elif fromdt:
             query["fromdt"] = fromdt
-            
-        
+
         if date and (isinstance(date, ListType) or isinstance(date, TupleType)):
             query["dt"] = "-".join([str(x) for x in date[:3]])
         elif date and (datetime and isinstance(date, datetime.datetime) or \
@@ -298,13 +289,13 @@ class DeliciousAccount(UserDict):
             query["dt"] = "-".join([str(date.year), str(date.month), str(date.day)])
         elif date:
             query["dt"] = date
-        
+
         postsxml = self.__request("%s/posts/%s?%s" % (DELICIOUS_API, path, \
                 urllib.urlencode(query))).getElementsByTagName("post")
         posts = []
         if _debug:
             sys.stderr.write("Parsing posts XML into a list of dictionaries.\n")
-            
+
         # For each post, extract every attribute (splitting tags into sub-lists)
         # and insert as a dictionary into the `posts` list.
         for post in postsxml:
@@ -328,7 +319,7 @@ class DeliciousAccount(UserDict):
             sys.stderr.write("Resetting marker so module doesn't think posts has been changed.\n")
         self.__postschanged = 0
         return posts
-        
+
     def tags(self):
         """Return a dictionary of tags with the number of posts in each one"""
         tagsxml = self.__request("%s/tags/get?" % \
@@ -353,7 +344,7 @@ class DeliciousAccount(UserDict):
         if not self.has_key("tags"):
             self["tags"] = tags
         return tags
-    
+
     def bundles(self):
         """Return a dictionary of all bundles"""
         bundlesxml = self.__request("%s/tags/bundles/all" % \
@@ -374,7 +365,7 @@ class DeliciousAccount(UserDict):
         if not self.has_key("bundles"):
             self["bundles"] = bundles
         return bundles
-        
+
     def dates(self, tag=""):
         """Return a dictionary of dates with the number of posts at each date"""
         if tag:
@@ -403,12 +394,12 @@ class DeliciousAccount(UserDict):
         if not self.has_key("dates"):
             self["dates"] = dates
         return dates
-    
-    
-    # Methods to modify del.icio.us content
-    
+
+
+    # Methods to modify pinboard.in content
+
     def add(self, url, description, extended="", tags=(), date=""):
-        """Add a new post to del.icio.us"""
+        """Add a new post to pinboard.in"""
         query = {}
         query["url"] = url
         query ["description"] = description
@@ -420,7 +411,7 @@ class DeliciousAccount(UserDict):
                 (not StringTypes and (isinstance(tags, StringType) or \
                 isinstance(tags, UnicodeType))):
             query["tags"] = tags
-            
+
         # This is a rather rudimentary way of parsing date strings into
         # ISO8601 dates: if the date string is shorter than the required
         # 20 characters then it is assumed that it is a partial date
@@ -453,13 +444,13 @@ class DeliciousAccount(UserDict):
             if response.firstChild.getAttribute("code") != u"done":
                 raise AddError
             if _debug:
-                sys.stderr.write("Post, %s (%s), added to del.icio.us\n" \
+                sys.stderr.write("Post, %s (%s), added to pinboard.in\n" \
                         % (description, url))
         except:
             if _debug:
-                sys.stderr.write("Unable to add post, %s (%s), to del.icio.us\n" \
+                sys.stderr.write("Unable to add post, %s (%s), to pinboard.in\n" \
                         % (description, url))
-    
+
     def bundle(self, bundle, tags):
         """Bundle a set of tags together"""
         query = {}
@@ -478,39 +469,39 @@ class DeliciousAccount(UserDict):
                         % (repr(tags), bundle))
         except:
             if _debug:
-                sys.stderr.write("Unable to bundle tags, %s, into %s to del.icio.us\n" \
+                sys.stderr.write("Unable to bundle tags, %s, into %s to pinboard.in\n" \
                         % (repr(tags), bundle))
-    
+
     def delete(self, url):
-        """Delete post from del.icio.us by its URL"""
+        """Delete post from pinboard.in by its URL"""
         try:
             response = self.__request("%s/posts/delete?%s" % (DELICIOUS_API, \
                     urllib.urlencode({"url":url})))
             if response.firstChild.getAttribute("code") != u"done":
                 raise DeleteError
             if _debug:
-                sys.stderr.write("Post, %s, deleted from del.icio.us\n" \
+                sys.stderr.write("Post, %s, deleted from pinboard.in\n" \
                         % url)
         except:
-            if _debug: 
-                sys.stderr.write("Unable to delete post, %s, from del.icio.us\n" \
+            if _debug:
+                sys.stderr.write("Unable to delete post, %s, from pinboard.in\n" \
                     % url)
-    
+
     def delete_bundle(self, name):
-        """Delete bundle from del.icio.us by its name"""
+        """Delete bundle from pinboard.in by its name"""
         try:
             response = self.__request("%s/tags/bundles/delete?%s" % (DELICIOUS_API, \
                     urllib.urlencode({"bundle":name})))
             if response.firstChild.getAttribute("code") != u"done":
                 raise DeleteBundleError
             if _debug:
-                sys.stderr.write("Bundle, %s, deleted from del.icio.us\n" \
+                sys.stderr.write("Bundle, %s, deleted from pinboard.in\n" \
                         % name)
         except:
-            if _debug: 
-                sys.stderr.write("Unable to delete bundle, %s, from del.icio.us\n" \
+            if _debug:
+                sys.stderr.write("Unable to delete bundle, %s, from pinboard.in\n" \
                     % name)
-    
+
     def rename_tag(self, old, new):
         """Rename a tag"""
         query = {"old":old, "new":new}
@@ -524,7 +515,7 @@ class DeliciousAccount(UserDict):
                         % (old, new))
         except:
             if _debug:
-                sys.stderr.write("Unable to rename %s tag to %s in del.icio.us\n" \
+                sys.stderr.write("Unable to rename %s tag to %s in pinboard.in\n" \
                     % (old, new))
 
 if __name__ == "__main__":
@@ -532,20 +523,21 @@ if __name__ == "__main__":
         print __version__
 
 #REVISION HISTORY
+## leaving as legacy for now, this should probably removed now for pinboard.in
 #0.1 - 29/3/2005 - PEM - Initial version.
 #0.2 - 30/3/2005 - PEM - Now using urllib's urlencode to handle query building
 #   and the class now extends dict (or failing that: UserDict).
 #0.3 - 30/3/2005 - PEM - Rewrote doc strings and improved the metaphor that the
-#   account is a dictionary by adding posts, tags and dates to the account 
-#   object when they are called. This has the added benefit of reducing 
-#   requests to del.icio.us as one need only call posts(), dates() and tags() 
+#   account is a dictionary by adding posts, tags and dates to the account
+#   object when they are called. This has the added benefit of reducing
+#   requests to delicious as one need only call posts(), dates() and tags()
 #   once and they are stored inside the class instance until deletion.
 #0.4 - 30/3/2005 - PEM - Added private __request method to handle URL requests
 #   to del.icio.us and implemented throttle detection.
 #0.5 - 30/3/2005 - PEM - Now implements every part of the API specification
 #0.6 - 30/3/2005 - PEM - Heavily vetted code to conform with PEP 8: use of
-#   isinstance(), use of `if var` and `if not var` instead of comparison to 
-#   empty strings and changed all string delimiters to double primes for 
+#   isinstance(), use of `if var` and `if not var` instead of comparison to
+#   empty strings and changed all string delimiters to double primes for
 #   consistency.
 #0.7 - 31/3/2005 - PEM - Made it so that when a fetching operation such as
 #   posts() or tags() is used, only new posts are added to the class dictionary
@@ -566,7 +558,7 @@ if __name__ == "__main__":
 #0.9 - 2/4/2005 - PEM - Now uses datetime objects when possible.
 #0.10 - 4/4/2005 - PEM - Uses the time module when the datetime module is
 #   unavailable (such as versions of Python prior to 2.3). Now uses time
-#   tuples instead of datetime objects when outputting for compatibility and 
+#   tuples instead of datetime objects when outputting for compatibility and
 #   consistency. Time tuples are a new attribute: "date_parsed", with the
 #   original string format of the date (or datetime) in "date" etc. Now stores
 #   the headers of each request.
