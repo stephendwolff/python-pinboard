@@ -13,7 +13,7 @@ The port to pinboard resulted in the inclusion of gzip support
 
 """
 
-__version__ = "pre-1.0"
+__version__ = "1.0"
 #__version__ = "1.0"
 __license__ = "BSD"
 __copyright__ = "Copyright 2005-2008, Paul Mucur"
