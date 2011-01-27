@@ -10,7 +10,7 @@ To install:
 
 Or (if you have pip installed)
 
-    pip install -e git://github.com/mgan59/python-pinboard.git#egg=python-pinboard
+    pip install -e git://github.com/mgan59/python-pinboard.git@v1.0#egg=python-pinboard
 
 For usage information and documentation, **docs/index.html** for more information
 And for ```licensing``` view LICENSE
