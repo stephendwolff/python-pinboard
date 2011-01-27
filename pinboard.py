@@ -14,10 +14,9 @@ The port to pinboard resulted in the inclusion of gzip support
 """
 
 __version__ = "1.0"
-#__version__ = "1.0"
 __license__ = "BSD"
-__copyright__ = "Copyright 2005-2008, Paul Mucur"
-__author__ = "Paul Mucur <http://mucur.name/>"
+__copyright__ = "Copyright 2011, Morgan Craft"
+__author__ = "Morgan Craft <http://www.morgancraft.com/>"
 
 #TODO:
 #   Should text be properly escaped for XML? Or that not this module's

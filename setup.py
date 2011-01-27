@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='Python-Pinboard',
-    version='pre-1.0',
+    version='1.0',
     description='Python module to access pinboard.in via its API',
-    author='Paul Mucur',
+    author='Morgan Craft',
     py_modules=['pinboard'])
