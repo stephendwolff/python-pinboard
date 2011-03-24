@@ -1,7 +1,7 @@
 Python-Pinboard
 ================
 
-Python module to access Pinboard via its API. This project is a forked from the original work by Paul Mucur on the Python-Delicious API.  
+Python module to access Pinboard via its API. This project is a fork from the original work by Paul Mucur on the Python-Delicious API.  
 
 To install:
 
