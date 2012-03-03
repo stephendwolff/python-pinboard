@@ -313,6 +313,15 @@ class PinboardAccount(UserDict):
         self.__postschanged = 0
         return posts
 
+    def suggest(self, url):
+        query = {'url': url}
+        tags = self.__request("%s/posts/suggest?%s" % (PINBOARD_API, urllib.urlencode(query)))
+
+        popular = [t.firstChild.data for t in tags.getElementsByTagName('popular')]
+        recommended = [t.firstChild.data for t in tags.getElementsByTagName('recommended')]
+ 
+        return {'popular': popular, 'recommended': recommended}
+
     def tags(self):
         """Return a dictionary of tags with the number of posts in each one"""
         tagsxml = self.__request("%s/tags/get?" % \
