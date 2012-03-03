@@ -391,12 +391,13 @@ class PinboardAccount(UserDict):
 
     # Methods to modify pinboard.in content
 
-    def add(self, url, description, extended="", tags=(), date="", toread="no"):
+    def add(self, url, description, extended="", tags=(), date="", toread="no", replace="no"):
         """Add a new post to pinboard.in"""
         query = {}
         query["url"] = url
         query ["description"] = description
         query["toread"] = toread
+        query["replace"] = replace
         if extended:
             query["extended"] = extended
         if tags and (isinstance(tags, TupleType) or isinstance(tags, ListType)):
