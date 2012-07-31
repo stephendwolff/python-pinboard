@@ -426,9 +426,9 @@ class PinboardAccount(UserDict):
         # the tuple/list is padded with necessary 0s and then formatted
         # into an ISO8601 date string. This does not take into account
         # time zones.
-        if date and (StringTypes and isinstance(tags, StringTypes)) or \
-                (not StringTypes and (isinstance(tags, StringType) or \
-                isinstance(tags, UnicodeType))) and len(date) < 20:
+        if date and (StringTypes and isinstance(date, StringTypes)) or \
+                (not StringTypes and (isinstance(date, StringType) or \
+                isinstance(date, UnicodeType))) and len(date) < 20:
             date = re.split("\D", date)
             while '' in date:
                 date.remove('')
