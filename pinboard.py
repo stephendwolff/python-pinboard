@@ -203,9 +203,9 @@ class PinboardAccount(UserDict):
         for header in raw_xml.headers.headers:
             (name, value) = header.split(": ")
             self["headers"][name.lower()] = value[:-2]
-        if raw_xml.headers.status == "503":
+        if raw_xml.headers.status == "429":
             raise ThrottleError(url, \
-                    "503 HTTP status code returned by pinboard.in")
+                    "429 HTTP status code returned by pinboard.in")
         if _debug:
             sys.stderr.write("%s opened successfully.\n" % url)
         return minidom.parseString(xml)
