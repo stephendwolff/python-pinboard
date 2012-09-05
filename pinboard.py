@@ -74,13 +74,33 @@ PINBOARD_API = "https://api.pinboard.in/v1"
 AUTH_HANDLER_REALM = 'API'
 AUTH_HANDLER_URI = "https://api.pinboard.in/"
 
-def open(username, password):
-    """Open a connection to a pinboard.in account"""
-    return PinboardAccount(username, password)
 
-def connect(username, password):
-    """Open a connection to a pinboard.in account"""
-    return open(username, password)
+def open(username=None, password=None, token=None):
+    """Open a connection to a pinboard.in account
+
+    Arguments:
+        username -- pinboard.in user name; for canonical authentication
+            both user and password should be specified
+
+        password -- pinboard.in password
+
+        token -- API token; username and password will be ignored
+            if the token is defined
+
+    Usage:
+        >>> open('johnd', 'secret$777')
+        >>> open(username='johnd', password='secret$777')
+        >>> open(token='johnd:258329B14EB83FD1E449')
+
+    Returns:
+        New pinboard.PinboardAccount instance."""
+    return PinboardAccount(username, password, token)
+
+
+def connect(username=None, password=None, token=None):
+    """Open a connection to a pinboard.in account
+    (alias for pinboard.open())."""
+    return open(username, password, token)
 
 
 # Custom exceptions
@@ -120,6 +140,7 @@ class RenameTagError(PinboardError):
 class DateParamsError(PinboardError):
     '''Date params error'''
     pass
+
 
 class PinboardAccount(UserDict):
     """A pinboard.in account"""
@@ -178,9 +199,7 @@ class PinboardAccount(UserDict):
             self.__postschanged = 1
         return UserDict.__setitem__(self, key, value)
 
-
     def __request(self, url):
-
         # Make sure that it has been at least 1 second since the last
         # request was made. If not, halt execution for approximately one
         # seconds.
