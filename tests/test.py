@@ -2,14 +2,11 @@
 
 """Python-Pinboard unit tests.
 
-This script requires 'token.txt' file to be placed in the same directory.
+Before running the tests:
 
-Consider to backup your data before running this test on real account
-or use dedicated sandbox account (the second approach is recommended).
-
-NO WARRANTY OF ANY KIND IS EXPRESSED OR IMPLIED. YOU USE AT YOUR OWN
-RISK. THE AUTHOR WILL NOT BE LIABLE FOR DATA LOSS, DAMAGES, LOSS OF PROFITS
-OR ANY OTHER KIND OF LOSS WHILE USING OR MISUSING THIS SOFTWARE."""
+1. Update user credentials at conf.py (see sample_conf.py for example).
+2. Consider to backup your data before running this test on real account
+or use dedicated sandbox account (the second approach is recommended)."""
 
 import conf
 import unittest
