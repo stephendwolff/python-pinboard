@@ -21,12 +21,10 @@ sys.path.insert(0, '..')
 import pinboard
 
 
-def gate_tag_names(tags):
+def get_tag_names(tags):
     for tag in tags:
         yield tag['name']
 
-
-# TODO: Cover PinboardAccount functionality
 
 class TestPinboardAccount(unittest.TestCase):
 
@@ -62,13 +60,13 @@ class TestPinboardAccount(unittest.TestCase):
         # Tags contains new tag
         tags = p.tags()
         self.assertTrue(type(tags), dict)
-        self.assertIn(test_tag, gate_tag_names(tags))
+        self.assertIn(test_tag, get_tag_names(tags))
 
         # Deleting test bookmark(s)
         for post in posts:
             p.delete(post['href'])
 
-        time.sleep(1)
+        time.sleep(3)
 
         # There are no posts with test tag
         posts = p.posts(tag=test_tag)
@@ -76,7 +74,7 @@ class TestPinboardAccount(unittest.TestCase):
 
         # And no test tag any more
         tags = p.tags()
-        self.assertNotIn(test_tag, gate_tag_names(tags))
+        self.assertNotIn(test_tag, get_tag_names(tags))
 
 
 if __name__ == '__main__':
