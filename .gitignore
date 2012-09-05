@@ -11,3 +11,4 @@ MANIFEST
 
 # This file intended to keep pinboard API token
 token.txt
+credentials.txt

@@ -15,20 +15,26 @@ import unittest
 import sys
 import time
 
-sys.path.insert(0, '.')
+sys.path.insert(0, '..')
 
 import pinboard
 
 
-TOKEN = 'token.txt'
-
-
-def get_token():
+def get_token(source='token.txt'):
     try:
-        with open(TOKEN, 'r') as f:
+        with open(source, 'r') as f:
             return f.read().strip()
     except:
-        print('error reading token from ' + TOKEN)
+        print("error reading token from '%s'" % source)
+        raise
+
+
+def get_credentials(source='credentials.txt'):
+    try:
+        with open(source, 'r') as f:
+            return f.read().strip().split(':', 2)
+    except:
+        print("error reading user credentials from '%s'" % source)
         raise
 
 
@@ -47,9 +53,17 @@ class TestPinboardAccount(unittest.TestCase):
     def setUp(self):
         self.__p = pinboard.open(token=get_token())
 
-    def test_basics(self):
+    def test_token(self):
+        p = pinboard.open(token=get_token())
+        self.common_case(p)
+
+    def test_canonical(self):
+        username, password = get_credentials()
+        p = pinboard.open(username, password)
+        self.common_case(p)
+
+    def common_case(self, p):
         """Add some test bookmark records and than delete them"""
-        p = self.__p
         test_url = 'http://github.com'
         test_tag = '__testing__'
 
@@ -61,15 +75,13 @@ class TestPinboardAccount(unittest.TestCase):
 
         posts = p.posts(tag=test_tag)
 
-        # Looks like there is no immediate consistency between API inputs
-        # and outputs, that's why additional delays added here and below.
-        time.sleep(1)
-
         # Bookmark was added
         self.assertIs(type(posts), list)
         self.assertTrue(posts)
 
-        time.sleep(1)
+        # Looks like there is no immediate consistency between API inputs
+        # and outputs, that's why additional delays added here and below.
+        time.sleep(3)
 
         # Tags contains new tag
         tags = p.tags()
