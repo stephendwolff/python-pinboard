@@ -8,3 +8,6 @@ build
 bin
 sdist
 MANIFEST
+
+# This file intended to keep pinboard API token
+token.txt

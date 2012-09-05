@@ -6,7 +6,7 @@ Recommended: Python 2.6 or later (untested on previous versions)
 
 This library was built on top of Paul Mucur's original work on the python-delicious
 which was supported for python 2.3.  Morgan became a contributor and ported this library
-to pinboard.in when it was announced in December 2010 that delicious servers may be 
+to pinboard.in when it was announced in December 2010 that delicious servers may be
 shutting down.
 
 The port to pinboard resulted in the inclusion of gzip support
@@ -165,7 +165,7 @@ class PinboardAccount(UserDict):
             sys.stderr.write("Initialising Pinboard Account object.\n")
 
         if token:
-            self.__token = token
+            self.__token = urllib.quote_plus(token)
             opener = urllib2.build_opener()
         else:
             auth_handler = urllib2.HTTPBasicAuthHandler()
@@ -213,6 +213,10 @@ class PinboardAccount(UserDict):
         if _debug:
             sys.stderr.write("Opening %s.\n" % url)
 
+        if self.__token:
+            sep = '&' if '?' in url else '?'
+            url = "%s%sauth_token=%s" % (url, sep, self.__token)
+
         try:
             ## for pinboard a gzip request is made
             raw_xml = urllib2.urlopen(url)
@@ -223,7 +227,7 @@ class PinboardAccount(UserDict):
             xml = gzipper.read()
 
         except urllib2.URLError, e:
-                raise e
+            raise e
 
         self["headers"] = {}
         for header in raw_xml.headers.headers:
@@ -426,7 +430,7 @@ class PinboardAccount(UserDict):
         """Add a new post to pinboard.in"""
         query = {}
         query["url"] = url
-        query ["description"] = description
+        query["description"] = description
         query["toread"] = toread
         query["replace"] = replace
         query["shared"] = shared
