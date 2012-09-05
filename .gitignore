@@ -9,6 +9,5 @@ bin
 sdist
 MANIFEST
 
-# This file intended to keep pinboard API token
-token.txt
-credentials.txt
+# Do not commit user credentials!
+tests/conf.py

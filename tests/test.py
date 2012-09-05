@@ -11,6 +11,7 @@ NO WARRANTY OF ANY KIND IS EXPRESSED OR IMPLIED. YOU USE AT YOUR OWN
 RISK. THE AUTHOR WILL NOT BE LIABLE FOR DATA LOSS, DAMAGES, LOSS OF PROFITS
 OR ANY OTHER KIND OF LOSS WHILE USING OR MISUSING THIS SOFTWARE."""
 
+import conf
 import unittest
 import sys
 import time
@@ -18,24 +19,6 @@ import time
 sys.path.insert(0, '..')
 
 import pinboard
-
-
-def get_token(source='token.txt'):
-    try:
-        with open(source, 'r') as f:
-            return f.read().strip()
-    except:
-        print("error reading token from '%s'" % source)
-        raise
-
-
-def get_credentials(source='credentials.txt'):
-    try:
-        with open(source, 'r') as f:
-            return f.read().strip().split(':', 2)
-    except:
-        print("error reading user credentials from '%s'" % source)
-        raise
 
 
 def gate_tag_names(tags):
@@ -47,19 +30,12 @@ def gate_tag_names(tags):
 
 class TestPinboardAccount(unittest.TestCase):
 
-    # PinboardAccount instance (new for each test)
-    __p = None
-
-    def setUp(self):
-        self.__p = pinboard.open(token=get_token())
-
     def test_token(self):
-        p = pinboard.open(token=get_token())
+        p = pinboard.open(token=conf.token)
         self.common_case(p)
 
     def test_canonical(self):
-        username, password = get_credentials()
-        p = pinboard.open(username, password)
+        p = pinboard.open(conf.username, conf.password)
         self.common_case(p)
 
     def common_case(self, p):
