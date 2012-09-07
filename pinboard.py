@@ -6,7 +6,7 @@ Recommended: Python 2.6 or later (untested on previous versions)
 
 This library was built on top of Paul Mucur's original work on the python-delicious
 which was supported for python 2.3.  Morgan became a contributor and ported this library
-to pinboard.in when it was announced in December 2010 that delicious servers may be 
+to pinboard.in when it was announced in December 2010 that delicious servers may be
 shutting down.
 
 The port to pinboard resulted in the inclusion of gzip support
@@ -74,13 +74,33 @@ PINBOARD_API = "https://api.pinboard.in/v1"
 AUTH_HANDLER_REALM = 'API'
 AUTH_HANDLER_URI = "https://api.pinboard.in/"
 
-def open(username, password):
-    """Open a connection to a pinboard.in account"""
-    return PinboardAccount(username, password)
 
-def connect(username, password):
-    """Open a connection to a pinboard.in account"""
-    return open(username, password)
+def open(username=None, password=None, token=None):
+    """Open a connection to a pinboard.in account
+
+    Arguments:
+        username -- pinboard.in user name; for canonical authentication
+            both user and password should be specified
+
+        password -- pinboard.in password
+
+        token -- API token; username and password will be ignored
+            if the token is defined
+
+    Usage:
+        >>> open('johnd', 'secret$777')
+        >>> open(username='johnd', password='secret$777')
+        >>> open(token='johnd:258329B14EB83FD1E449')
+
+    Returns:
+        New pinboard.PinboardAccount instance."""
+    return PinboardAccount(username, password, token)
+
+
+def connect(username=None, password=None, token=None):
+    """Open a connection to a pinboard.in account
+    (alias for pinboard.open())."""
+    return open(username, password, token)
 
 
 # Custom exceptions
@@ -121,6 +141,7 @@ class DateParamsError(PinboardError):
     '''Date params error'''
     pass
 
+
 class PinboardAccount(UserDict):
     """A pinboard.in account"""
 
@@ -131,24 +152,31 @@ class PinboardAccount(UserDict):
     # Time of last request so that the one second limit can be enforced.
     __lastrequest = None
 
+    # Pinboard API token
+    # (see http://blog.pinboard.in/2012/07/api_authentication_tokens/)
+    __token = None
+
     # Special methods
 
-    def __init__(self, username, password):
+    def __init__(self, username=None, password=None, token=None):
         UserDict.__init__(self)
         # Authenticate the URL opener so that it can access Pinboard
         if _debug:
             sys.stderr.write("Initialising Pinboard Account object.\n")
-        auth_handler = urllib2.HTTPBasicAuthHandler()
-        auth_handler.add_password("API", "https://api.pinboard.in/", \
-                username, password)
-        opener = urllib2.build_opener(auth_handler)
+
+        if token:
+            self.__token = urllib.quote_plus(token)
+            opener = urllib2.build_opener()
+        else:
+            auth_handler = urllib2.HTTPBasicAuthHandler()
+            auth_handler.add_password("API", "https://api.pinboard.in/", \
+                    username, password)
+            opener = urllib2.build_opener(auth_handler)
+
         opener.addheaders = [("User-agent", USER_AGENT), ('Accept-encoding', 'gzip')]
         urllib2.install_opener(opener)
         if _debug:
             sys.stderr.write("URL opener with HTTP authenticiation installed globally.\n")
-        
-        
-        if _debug:
             sys.stderr.write("Time of last update loaded into class dictionary.\n")
 
     def __getitem__(self, key):
@@ -171,9 +199,7 @@ class PinboardAccount(UserDict):
             self.__postschanged = 1
         return UserDict.__setitem__(self, key, value)
 
-
     def __request(self, url):
-
         # Make sure that it has been at least 1 second since the last
         # request was made. If not, halt execution for approximately one
         # seconds.
@@ -186,7 +212,11 @@ class PinboardAccount(UserDict):
         self.__lastrequest = time.time()
         if _debug:
             sys.stderr.write("Opening %s.\n" % url)
-        
+
+        if self.__token:
+            sep = '&' if '?' in url else '?'
+            url = "%s%sauth_token=%s" % (url, sep, self.__token)
+
         try:
             ## for pinboard a gzip request is made
             raw_xml = urllib2.urlopen(url)
@@ -195,10 +225,10 @@ class PinboardAccount(UserDict):
             compressedstream = StringIO.StringIO(compresseddata)
             gzipper = gzip.GzipFile(fileobj=compressedstream)
             xml = gzipper.read()
-            
+
         except urllib2.URLError, e:
-                raise e
-        
+            raise e
+
         self["headers"] = {}
         for header in raw_xml.headers.headers:
             (name, value) = header.split(": ")
@@ -209,10 +239,7 @@ class PinboardAccount(UserDict):
         if _debug:
             sys.stderr.write("%s opened successfully.\n" % url)
         return minidom.parseString(xml)
-        
-    
-    
-    
+
     def posts(self, tag="", date="", todt="", fromdt="", count=0):
         """Return pinboard.in bookmarks as a list of dictionaries.
 
@@ -319,7 +346,7 @@ class PinboardAccount(UserDict):
 
         popular = [t.firstChild.data for t in tags.getElementsByTagName('popular')]
         recommended = [t.firstChild.data for t in tags.getElementsByTagName('recommended')]
- 
+
         return {'popular': popular, 'recommended': recommended}
 
     def tags(self):
@@ -397,14 +424,13 @@ class PinboardAccount(UserDict):
             self["dates"] = dates
         return dates
 
-
     # Methods to modify pinboard.in content
 
     def add(self, url, description, extended="", tags=(), date="", toread="no", replace="no", shared="yes"):
         """Add a new post to pinboard.in"""
         query = {}
         query["url"] = url
-        query ["description"] = description
+        query["description"] = description
         query["toread"] = toread
         query["replace"] = replace
         query["shared"] = shared
