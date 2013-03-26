@@ -179,6 +179,10 @@ class PinboardAccount(UserDict):
             sys.stderr.write("URL opener with HTTP authenticiation installed globally.\n")
             sys.stderr.write("Time of last update loaded into class dictionary.\n")
 
+        self["lastupdate"] = self.lastupdate()
+        if _debug:
+            sys.stderr.write("Time of last update loaded into class dictionary.\n")
+
     def __getitem__(self, key):
         try:
             return UserDict.__getitem__(self, key)
@@ -239,6 +243,11 @@ class PinboardAccount(UserDict):
         if _debug:
             sys.stderr.write("%s opened successfully.\n" % url)
         return minidom.parseString(xml)
+
+    def lastupdate(self):
+        """Return the last time that the pinboard account was updated."""
+        return self.__request("%s/posts/update" % \
+                PINBOARD_API).firstChild.getAttribute("time")
 
     def posts(self, tag="", date="", todt="", fromdt="", count=0):
         """Return pinboard.in bookmarks as a list of dictionaries.
