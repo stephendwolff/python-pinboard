@@ -177,6 +177,9 @@ class PinboardAccount(UserDict):
         urllib2.install_opener(opener)
         if _debug:
             sys.stderr.write("URL opener with HTTP authenticiation installed globally.\n")
+
+        self["last_updated"] = self.last_update()
+        if _debug:
             sys.stderr.write("Time of last update loaded into class dictionary.\n")
 
     def __getitem__(self, key):
@@ -240,11 +243,16 @@ class PinboardAccount(UserDict):
             sys.stderr.write("%s opened successfully.\n" % url)
         return minidom.parseString(xml)
 
+    def last_update(self):
+        """Return the last time that the pinboard account was updated."""
+        return self.__request("%s/posts/update" % \
+                PINBOARD_API).firstChild.getAttribute("time")
+
     def posts(self, tag="", date="", todt="", fromdt="", count=0):
         """Return pinboard.in bookmarks as a list of dictionaries.
 
         This should be used without arguments as rarely as possible by
-        combining it with the lastupdate attribute to only get all posts when
+        combining it with the last_updated attribute to only get all posts when
         there is new content as it places a large load on the pinboard.in
         servers.
 
@@ -265,7 +273,7 @@ class PinboardAccount(UserDict):
             if _debug:
                 sys.stderr.write("Checking to see if a previous download has been made.\n")
             if not self.__postschanged and self.__allposts and \
-                    self.lastupdate() == self["lastupdate"]:
+                    self.last_update() == self["last_updated"]:
                 if _debug:
                     sys.stderr.write("It has; returning old posts instead.\n")
                 return self["posts"]
