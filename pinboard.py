@@ -177,7 +177,6 @@ class PinboardAccount(UserDict):
         urllib2.install_opener(opener)
         if _debug:
             sys.stderr.write("URL opener with HTTP authenticiation installed globally.\n")
-            sys.stderr.write("Time of last update loaded into class dictionary.\n")
 
         self["last_updated"] = self.last_update()
         if _debug:
