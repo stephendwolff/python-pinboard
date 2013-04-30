@@ -206,7 +206,7 @@
 			<h3>Notes on Documentation</h3>
 			<!-- <p>Code examples are typeset in a <code>sans-serif font</code> with <code>normal code in black</code>, <kbd>user input in green</kbd>, <samp>sample output in blue</samp> and <var>arguments in purple</var>.</p> -->
 			<p>Attribute and method examples assume the existence of a <a href="#pinboardaccount">PinboardAccount</a> variable <code>p</code> which could have been created by the following code:</p>
-	<pre><code>import delicious
+	<pre><code>import pinboard
 p = pinboard.open(<kbd>"username"</kbd>, <kbd>"password"</kbd>)</code></pre>
 		</div>
 		<div id="overview">
@@ -236,11 +236,19 @@ p = pinboard.open(<kbd>"username"</kbd>, <kbd>"password"</kbd>)</code></pre>
 				</dl>
 				<p>As well as the usual Python syntax for creating a new object, two methods, <code>open</code> and <code>connect</code>, can be used like so:</p>
 	<pre><code>import pinboard
-	p = pinboard.PinboardAccount(<kbd>"username"</kbd>, <kbd>"password"</kbd>)
-	p = pinboard.open(<kbd>"username"</kbd>, <kbd>"password"</kbd>)
-	p = pinboard.connect(<kbd>"username"</kbd>, <kbd>"password"</kbd>)</code></pre>
+p = pinboard.PinboardAccount(<kbd>"username"</kbd>, <kbd>"password"</kbd>)
+p = pinboard.open(<kbd>"username"</kbd>, <kbd>"password"</kbd>)
+p = pinboard.connect(<kbd>"username"</kbd>, <kbd>"password"</kbd>)</code></pre>
+				<p>Otherwise, you can authenticate with a token by specifying only the following parameter:</p>
+				<dl>
+					<dt><var>token</var></dt>
+					<dd>API token; username and password will be ignored if the token is defined</dd>
+				</dl>
+	<pre><code>import pinboard
+p = pinboard.PinboardAccount(token=<kbd>"user:TOKEN")
+p = pinboard.open(token=<kbd>"user:TOKEN")
+p = pinboard.connect(token=<kbd>"user:TOKEN")</code></pre>
 			</div>
-		</div>
 		<div id="attributes">
 			<h3>Attributes</h3>
 			<p>As the module aims to represent a Pinboard account as a Python dictionary, data from your account is most easily accessed using the dictionary syntax of <code>object["key"]</code>.</p>
@@ -255,8 +263,8 @@ p = pinboard.open(<kbd>"username"</kbd>, <kbd>"password"</kbd>)</code></pre>
 				<pre><code>p["dates"]</code></pre>
 				<p>This attribute contains a list of all of the dates on which you have made posts to Pinboard. Each element in this list is a dictionary of the following form:</p>
 				<pre><samp>{u'count': 2,
-	u'date': u'2005-05-08',
-	u'date_parsed': (2005, 5, 8, 0, 0, 0, 6, 128, -1)}</samp></pre>
+u'date': u'2005-05-08',
+u'date_parsed': (2005, 5, 8, 0, 0, 0, 6, 128, -1)}</samp></pre>
 				<p>The anatomy of the above dictionary is as follows:</p>
 				<dl>
 					<dt><var>count</var></dt>
