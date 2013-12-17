@@ -20,3 +20,7 @@ Contributors
 
 * Original Creator [Paul Mucur](https://github.com/mudge)
 * [Morgan Craft](https://github.com/mgan59)
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mgan59/python-pinboard/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
