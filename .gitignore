@@ -8,6 +8,8 @@ build
 bin
 sdist
 MANIFEST
+*.swp
+*.un~
 
 # Do not commit user credentials!
 tests/conf.py

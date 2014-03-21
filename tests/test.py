@@ -26,15 +26,18 @@ def get_tag_names(tags):
 class TestPinboardAccount(unittest.TestCase):
 
     def test_token(self):
+        print '\nTest Token Auth and Common Cases'
         p = pinboard.open(token=conf.token)
         self.common_case(p)
 
     def test_canonical(self):
+        print '\nTest Username/Pwd Auth and Common Cases'
         p = pinboard.open(conf.username, conf.password)
         self.common_case(p)
 
     def common_case(self, p):
         """Add some test bookmark records and than delete them"""
+        print 'Executing Common Cases'
         test_url = 'http://github.com'
         test_tag = '__testing__'
 
@@ -52,8 +55,10 @@ class TestPinboardAccount(unittest.TestCase):
 
         # Looks like there is no immediate consistency between API inputs
         # and outputs, that's why additional delays added here and below.
+        print 'API Threshold Delay (3 seconds)'
         time.sleep(3)
 
+        print 'API Resuming'
         # Tags contains new tag
         tags = p.tags()
         self.assertTrue(type(tags), dict)
@@ -63,8 +68,10 @@ class TestPinboardAccount(unittest.TestCase):
         for post in posts:
             p.delete(post['href'])
 
+        print 'API Threshold Delay (3 seconds)'
         time.sleep(3)
 
+        print 'API Resuming'
         # There are no posts with test tag
         posts = p.posts(tag=test_tag)
         self.assertFalse(posts)
