@@ -24,7 +24,7 @@ __author__ = "Morgan Craft <http://www.morgancraft.com/>"
 #   Create test suite
 
 
-_debug = 0
+_debug = False
 
 # The user agent string sent to pinboard.in when making requests. If you are
 # using this module in your own application, you should probably change this.
@@ -248,7 +248,7 @@ class PinboardAccount(UserDict):
         return self.__request("%s/posts/update" % \
                 PINBOARD_API).firstChild.getAttribute("time")
 
-    def posts(self, tag="", date="", todt="", fromdt="", count=0):
+    def posts(self, tag="", date="", todt="", fromdt="", count=0, offset=0, only_toread = False):
         """Return pinboard.in bookmarks as a list of dictionaries.
 
         This should be used without arguments as rarely as possible by
@@ -285,10 +285,16 @@ class PinboardAccount(UserDict):
             path = "get"
         elif todt or fromdt:
             path = "all"
+        elif count and offset:
+            path = "all"
         else:
             path = "recent"
-        if count:
+            
+        if count and not offset:
             query["count"] = count
+        if count and offset:
+            query["start"] = offset
+            query["results"]  = count
         if tag:
             query["tag"] = tag
 
@@ -336,9 +342,11 @@ class PinboardAccount(UserDict):
                     postdict[u"time_parsed"] = time.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
                 postdict[name] = value
             if self.has_key("posts") and isinstance(self["posts"], ListType) \
-                    and postdict not in self["posts"]:
+                    and postdict not in self["posts"] \
+                    and (not only_toread or (only_toread and ("toread" in postdict) and postdict["toread"] == "yes")):
                 self["posts"].append(postdict)
-            posts.append(postdict)
+            if (not only_toread or (only_toread and ("toread" in postdict) and postdict["toread"] == "yes")):
+                posts.append(postdict)
         if _debug:
             sys.stderr.write("Inserting posts list into class attribute.\n")
         if not self.has_key("posts"):
