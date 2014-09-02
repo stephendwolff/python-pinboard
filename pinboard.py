@@ -248,7 +248,7 @@ class PinboardAccount(UserDict):
         return self.__request("%s/posts/update" % \
                 PINBOARD_API).firstChild.getAttribute("time")
 
-    def posts(self, tag="", date="", todt="", fromdt="", count=0, offset=0, only_toread = False):
+    def posts(self, tag="", date="", todt="", fromdt="", count=0, offset=0, only_toread=False):
         """Return pinboard.in bookmarks as a list of dictionaries.
 
         This should be used without arguments as rarely as possible by
@@ -256,6 +256,15 @@ class PinboardAccount(UserDict):
         there is new content as it places a large load on the pinboard.in
         servers.
 
+        Keyword arguments:
+
+        tag -- only return posts with tag (default "")
+        date -- only return posts for a certain date (default "")
+        fromdt -- lower limit of date range (default "")
+        todt -- upper limit of date range (default "")
+        count -- number of posts to return, if 0 all posts are returned (default 0)
+        offset -- post to start returning after first post (default 0)
+        only_toread -- only return posts where toread="yes" (default False)
         """
         query = {}
 
@@ -341,11 +350,14 @@ class PinboardAccount(UserDict):
                 if name == u"time":
                     postdict[u"time_parsed"] = time.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
                 postdict[name] = value
+
+            # If only_toread = True and post['toread'] = "yes", return post.
+            # If only_toread = False, disregard post['toread'] property.
             if self.has_key("posts") and isinstance(self["posts"], ListType) \
                     and postdict not in self["posts"] \
-                    and (not only_toread or (only_toread and ("toread" in postdict) and postdict["toread"] == "yes")):
+                    and not only_toread or (only_toread and ("toread" in postdict) and postdict["toread"] == "yes"):
                 self["posts"].append(postdict)
-            if (not only_toread or (only_toread and ("toread" in postdict) and postdict["toread"] == "yes")):
+            if not only_toread or (only_toread and "toread" in postdict and postdict["toread"] == "yes"):
                 posts.append(postdict)
         if _debug:
             sys.stderr.write("Inserting posts list into class attribute.\n")
