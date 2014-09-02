@@ -45,7 +45,21 @@ class TestPinboardAccount(unittest.TestCase):
         p.add(url=test_url,
               description='GitHub',
               extended='It\'s a GitHub!',
-              tags=(test_tag))
+              tags=(test_tag),
+              toread=False)
+
+        # Test only_toread parameter. Test bookmark should not be returned.
+        posts = p.posts(tag=test_tag, only_toread=True)
+
+        self.assertIs(type(posts), list)
+        self.assertFalse(posts)
+
+        # Looks like there is no immediate consistency between API inputs
+        # and outputs, that's why additional delays added here and below.
+        print 'API Threshold Delay (3 seconds)'
+        time.sleep(3)
+
+        print 'API Resuming'
 
         posts = p.posts(tag=test_tag)
 
@@ -78,7 +92,7 @@ class TestPinboardAccount(unittest.TestCase):
 
         # And no test tag any more
         tags = p.tags()
-        self.assertNotIn(test_tag, get_tag_names(tags))
+        self.assertNotIn(test_tag, tags)
 
 
 if __name__ == '__main__':
