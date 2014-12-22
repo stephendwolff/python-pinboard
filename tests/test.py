@@ -18,6 +18,13 @@ sys.path.insert(0, '..')
 import pinboard
 
 
+def api_wait():
+# Looks like there is no immediate consistency between API inputs
+# and outputs, that's why additional delays added here and below.
+    print 'API Threshold Delay (3 seconds)'
+    time.sleep(3)
+    print 'API Resuming'
+
 def get_tag_names(tags):
     for tag in tags:
         yield tag['name']
@@ -54,12 +61,7 @@ class TestPinboardAccount(unittest.TestCase):
         self.assertIs(type(posts), list)
         self.assertFalse(posts)
 
-        # Looks like there is no immediate consistency between API inputs
-        # and outputs, that's why additional delays added here and below.
-        print 'API Threshold Delay (3 seconds)'
-        time.sleep(3)
-
-        print 'API Resuming'
+        api_wait()
 
         posts = p.posts(tag=test_tag)
 
@@ -67,12 +69,8 @@ class TestPinboardAccount(unittest.TestCase):
         self.assertIs(type(posts), list)
         self.assertTrue(posts)
 
-        # Looks like there is no immediate consistency between API inputs
-        # and outputs, that's why additional delays added here and below.
-        print 'API Threshold Delay (3 seconds)'
-        time.sleep(3)
+        api_wait()
 
-        print 'API Resuming'
         # Tags contains new tag
         tags = p.tags()
         self.assertTrue(type(tags), dict)
@@ -82,10 +80,8 @@ class TestPinboardAccount(unittest.TestCase):
         for post in posts:
             p.delete(post['href'])
 
-        print 'API Threshold Delay (3 seconds)'
-        time.sleep(3)
+        api_wait()
 
-        print 'API Resuming'
         # There are no posts with test tag
         posts = p.posts(tag=test_tag)
         self.assertFalse(posts)
