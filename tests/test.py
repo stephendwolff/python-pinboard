@@ -91,5 +91,50 @@ class TestPinboardAccount(unittest.TestCase):
         self.assertNotIn(test_tag, tags)
 
 
+    def test_delete_tag(self):
+        """Test tag deletion"""
+        p = pinboard.open(token=conf.token)
+
+        test_url = 'http://github.com'
+        test_tag = '__testing__'
+
+        # Clean pre-conditions
+        p.delete(test_url)
+
+        # Test pre-conditions (no test tag)
+        tags = p.tags()
+        self.assertNotIn(test_tag, get_tag_names(tags))
+
+        # Adding a test bookmark
+        p.add(url=test_url,
+              description='GitHub',
+              extended='It\'s a GitHub!',
+              tags=(test_tag),
+              toread=False,
+              replace="yes")
+
+        api_wait()
+
+        # Tags contains new tag
+        tags = p.tags()
+        self.assertTrue(type(tags), dict)
+        self.assertIn(test_tag, get_tag_names(tags))
+
+        # Deleting test tag
+        p.delete_tag(test_tag)
+
+        api_wait()
+
+        # There are no posts with test tag
+        posts = p.posts(tag=test_tag)
+        self.assertFalse(posts)
+
+        # And no test tag any more
+        tags = p.tags()
+        self.assertNotIn(test_tag, get_tag_names(tags))
+
+        # Clean Up
+        p.delete(test_url)
+
 if __name__ == '__main__':
     unittest.main()
