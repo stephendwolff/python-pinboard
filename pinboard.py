@@ -577,6 +577,21 @@ class PinboardAccount(UserDict):
                 sys.stderr.write("Unable to rename %s tag to %s in pinboard.in\n" \
                     % (old, new))
 
+    def delete_tag(self, name):
+        """Delete a tag from pinboard.in by its name"""
+        try:
+            response = self.__request("%s/tags/delete?%s" % (PINBOARD_API, \
+                    urllib.urlencode({"tag":name})))
+            if response.firstChild.getAttribute("code") != u"done":
+                raise DeleteBundleError
+            if _debug:
+                sys.stderr.write("Tag, %s, deleted from pinboard.in\n" \
+                        % name)
+        except:
+            if _debug:
+                sys.stderr.write("Unable to delete tag, %s, from pinboard.in\n" \
+                    % name)
+
 if __name__ == "__main__":
     if sys.argv[1:][0] == '-v' or sys.argv[1:][0] == '--version':
         print __version__

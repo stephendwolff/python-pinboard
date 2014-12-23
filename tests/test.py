@@ -18,6 +18,13 @@ sys.path.insert(0, '..')
 import pinboard
 
 
+def api_wait():
+# Looks like there is no immediate consistency between API inputs
+# and outputs, that's why additional delays added here and below.
+    print 'API Threshold Delay (3 seconds)'
+    time.sleep(3)
+    print 'API Resuming'
+
 def get_tag_names(tags):
     for tag in tags:
         yield tag['name']
@@ -54,12 +61,7 @@ class TestPinboardAccount(unittest.TestCase):
         self.assertIs(type(posts), list)
         self.assertFalse(posts)
 
-        # Looks like there is no immediate consistency between API inputs
-        # and outputs, that's why additional delays added here and below.
-        print 'API Threshold Delay (3 seconds)'
-        time.sleep(3)
-
-        print 'API Resuming'
+        api_wait()
 
         posts = p.posts(tag=test_tag)
 
@@ -67,12 +69,8 @@ class TestPinboardAccount(unittest.TestCase):
         self.assertIs(type(posts), list)
         self.assertTrue(posts)
 
-        # Looks like there is no immediate consistency between API inputs
-        # and outputs, that's why additional delays added here and below.
-        print 'API Threshold Delay (3 seconds)'
-        time.sleep(3)
+        api_wait()
 
-        print 'API Resuming'
         # Tags contains new tag
         tags = p.tags()
         self.assertTrue(type(tags), dict)
@@ -82,10 +80,8 @@ class TestPinboardAccount(unittest.TestCase):
         for post in posts:
             p.delete(post['href'])
 
-        print 'API Threshold Delay (3 seconds)'
-        time.sleep(3)
+        api_wait()
 
-        print 'API Resuming'
         # There are no posts with test tag
         posts = p.posts(tag=test_tag)
         self.assertFalse(posts)
@@ -94,6 +90,51 @@ class TestPinboardAccount(unittest.TestCase):
         tags = p.tags()
         self.assertNotIn(test_tag, tags)
 
+
+    def test_delete_tag(self):
+        """Test tag deletion"""
+        p = pinboard.open(token=conf.token)
+
+        test_url = 'http://github.com'
+        test_tag = '__testing__'
+
+        # Clean pre-conditions
+        p.delete(test_url)
+
+        # Test pre-conditions (no test tag)
+        tags = p.tags()
+        self.assertNotIn(test_tag, get_tag_names(tags))
+
+        # Adding a test bookmark
+        p.add(url=test_url,
+              description='GitHub',
+              extended='It\'s a GitHub!',
+              tags=(test_tag),
+              toread=False,
+              replace="yes")
+
+        api_wait()
+
+        # Tags contains new tag
+        tags = p.tags()
+        self.assertTrue(type(tags), dict)
+        self.assertIn(test_tag, get_tag_names(tags))
+
+        # Deleting test tag
+        p.delete_tag(test_tag)
+
+        api_wait()
+
+        # There are no posts with test tag
+        posts = p.posts(tag=test_tag)
+        self.assertFalse(posts)
+
+        # And no test tag any more
+        tags = p.tags()
+        self.assertNotIn(test_tag, get_tag_names(tags))
+
+        # Clean Up
+        p.delete(test_url)
 
 if __name__ == '__main__':
     unittest.main()
